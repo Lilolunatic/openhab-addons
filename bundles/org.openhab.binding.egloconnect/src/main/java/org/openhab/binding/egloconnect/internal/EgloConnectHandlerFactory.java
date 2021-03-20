@@ -45,19 +45,15 @@ public class EgloConnectHandlerFactory extends BaseThingHandlerFactory {
 
     @Override
     public boolean supportsThingType(ThingTypeUID thingTypeUID) {
-        logger.error(thingTypeUID.toString());
-        if (SUPPORTED_THING_TYPES_UIDS.contains(thingTypeUID)) {
-            logger.error("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-        }
         return SUPPORTED_THING_TYPES_UIDS.contains(thingTypeUID);
     }
 
     @Override
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
-        logger.error("createHandler: " + thingTypeUID.toString());
+        logger.warn("createHandler(): " + thingTypeUID.toString());
         if (thingTypeUID.equals(EgloConnectBindingConstants.THING_TYPE_AWOX_BULB)) {
-            logger.error("createHandler: return new handler");
+            logger.warn("createHandler(): return new handler");
             return new EgloConnectHandler(thing);
         }
         return null;

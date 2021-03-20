@@ -15,7 +15,11 @@
 		<description>Sample thing for EgloConnect Binding</description>
 
 		<channels>
-			<channel id="channel1" typeId="sample-channel"/>
+			<channel id="power" typeId="system.power"/>
+			<channel id="white_temperature" typeId="system.color-temperature"/>
+			<channel id="white_brightness" typeId="system.brightness"/>
+			<channel id="color" typeId="system.color"/>
+			<channel id="color_brightness" typeId="system.brightness"/>
 		</channels>
 
 		<config-description>
@@ -33,12 +37,5 @@
 		</config-description>
 
 	</thing-type>
-
-	<!-- Sample Channel Type -->
-	<channel-type id="sample-channel">
-		<item-type>egloconnectItem</item-type>
-		<label>EgloConnect Binding Channel</label>
-		<description>Sample channel for EgloConnect Binding</description>
-	</channel-type>
 
 </thing:thing-descriptions>

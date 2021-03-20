@@ -54,7 +54,6 @@ public class EgloConnectDiscoveryParticipant implements BluetoothDiscoveryPartic
             return new ThingUID(EgloConnectBindingConstants.THING_TYPE_AWOX_BULB, device.getAdapter().getUID(),
                     device.getAddress().toString().toLowerCase().replace(":", ""));
         }
-        logger.debug("Deine Mom");
         return null;
     }
 
