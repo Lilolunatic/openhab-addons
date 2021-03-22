@@ -10,6 +10,12 @@
       <version>3.1.0-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.11</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <parent>
