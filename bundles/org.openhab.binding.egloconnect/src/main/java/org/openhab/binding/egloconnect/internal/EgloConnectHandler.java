@@ -23,6 +23,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.bluetooth.BeaconBluetoothHandler;
 import org.openhab.binding.bluetooth.BluetoothCharacteristic;
 import org.openhab.binding.bluetooth.BluetoothDevice;
+import org.openhab.binding.bluetooth.ConnectedBluetoothHandler;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.types.Command;
@@ -212,66 +213,3 @@ public class EgloConnectHandler extends BeaconBluetoothHandler {
         return device.writeCharacteristic(characteristic);
     }
 }
-
-/*
- * 
- * def make_command_packet (key, address, dest_id, command, data):
- * """
- * Args :
- * key: The encryption key, 16 bytes.
- * address: The mac address as a string.
- * dest_id: The mesh id of the command destination as a number.
- * command: The command as a number.
- * data: The parameters for the command as bytes.
- * """
- * # Sequence number, just need to be different, idea from https://github.com/nkaminski/csrmesh
- * s = urandom (3)
- * 
- * # Build nonce
- * a = bytearray.fromhex(address.replace (":",""))
- * a.reverse()
- * nonce = bytes(a[0:4] + b'\x01' + s)
- * 
- * # Build payload
- * dest = struct.pack ("<H", dest_id)
- * 
- * payload = (dest + struct.pack('B', command) + b'\x60\x01' + data).ljust(15, b'\x00')
- * 
- * # Compute checksum
- * check = make_checksum (key, nonce, payload)
- * 
- * # Encrypt payload
- * payload = crypt_payload (key, nonce, payload)
- * 
- * # Make packet
- * packet = s + check[0:2] + payload
- * return packet
- * 
- * 
- * def writeCommand (self, command, data, dest = None):
- * """
- * Args:
- * command: The command, as a number.
- * data: The parameters for the command, as bytes.
- * dest: The destination mesh id, as a number. If None, this lightbulb's
- * mesh id will be used.
- * """
- * assert (self.session_key)
- * if dest == None: dest = self.mesh_id
- * packet = pckt.make_command_packet (self.session_key, self.mac, dest, command, data)
- * command_char = self.btdevice.getCharacteristics (uuid=COMMAND_CHAR_UUID)[0]
- * logger.info ("Writing command %i data %s", command, repr (data))
- * command_char.write (packet)
- * 
- * 
- * def setColor (self, red, green, blue):
- * """
- * Args :
- * red, green, blue: between 0 and 0xff
- * """
- * data = struct.pack ('BBBB', 0x04, red, green, blue)
- * self.writeCommand (C_COLOR, data)
- * 
- * 
- * 
- */
