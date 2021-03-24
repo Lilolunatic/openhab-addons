@@ -1,16 +1,16 @@
 package org.openhab.binding.egloconnect.internal;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-public class EgloConnectPacketHelper {
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 
+public class EgloConnectPacketHelper {
 
     public static byte[] encrypt(final byte[] key, final byte[] value) throws Exception {
         if (key.length != 16 || value.length > 16) {
-            //fehler werfen
+            // fehler werfen
             throw new IllegalArgumentException();
         }
         byte[] val = new byte[16];
@@ -37,11 +37,10 @@ public class EgloConnectPacketHelper {
         return tmp;
     }
 
-
     public static byte[] makeChecksum(final byte[] key, final byte[] nonce, final byte[] payload) throws Exception {
 
-        //int size = nonce.length + payload.length;
-        //if (size < 16) size = 16;
+        // int size = nonce.length + payload.length;
+        // if (size < 16) size = 16;
         byte[] base = new byte[16];
         for (int i = 0; i < nonce.length; i++) {
             // concatenate
@@ -49,9 +48,8 @@ public class EgloConnectPacketHelper {
         }
         base[nonce.length] = (byte) payload.length;
 
-        //byte[] tmbBase = Arrays.copyOfRange(base, 0, 15); //15 falsch und unnötig geworden
+        // byte[] tmbBase = Arrays.copyOfRange(base, 0, 15); //15 falsch und unnötig geworden
         byte[] check = encrypt(key, base);
-
 
         for (int i = 0; i < payload.length; i = i + 16) {
             byte[] check_payload = new byte[16];
@@ -68,11 +66,11 @@ public class EgloConnectPacketHelper {
         return check;
     }
 
-
     public static byte[] cryptPayload(final byte[] key, final byte[] nonce, final byte[] payload) throws Exception {
 
         int size = nonce.length + 1;
-        if (size < 16) size = 16;
+        if (size < 16)
+            size = 16;
         byte[] base = new byte[size];
 
         for (int i = 0; i < nonce.length; i++) {
@@ -92,9 +90,8 @@ public class EgloConnectPacketHelper {
         return result;
     }
 
-
-    public static byte[] makeCommandPacket(final byte[] key, String address, short dest_id, byte command, final byte[] data, final byte[] random) throws Exception {
-
+    public static byte[] makeCommandPacket(final byte[] key, String address, short dest_id, byte command,
+            final byte[] data, final byte[] random) throws Exception {
 
         byte[] s = new byte[3];
         if (random != null && random.length == 3) {
@@ -105,7 +102,7 @@ public class EgloConnectPacketHelper {
             }
         }
 
-        //Build nonce
+        // Build nonce
         byte[] tmp = hexStringToByteArray(address.replace(":", ""));
         byte[] a = new byte[tmp.length];
         for (int i = 0; i < tmp.length; i++) {
@@ -124,9 +121,10 @@ public class EgloConnectPacketHelper {
             }
         }
 
-        //Build payload
+        // Build payload
         int size = 2 + 1 + 2 + data.length;
-        if (size < 15) size = 15;
+        if (size < 15)
+            size = 15;
         byte[] payload = new byte[size];
 
         payload[0] = (byte) dest_id;
@@ -141,13 +139,13 @@ public class EgloConnectPacketHelper {
             payload[i] = data[i - 5];
         }
 
-        //Compute checksum
+        // Compute checksum
         byte[] check = makeChecksum(key, nonce, payload);
 
-        //Encrypt payload
+        // Encrypt payload
         payload = cryptPayload(key, nonce, payload);
 
-        //Make packet
+        // Make packet
         byte[] packet = new byte[3 + 2 + payload.length];
         packet[0] = s[0];
         packet[1] = s[1];
@@ -163,10 +161,14 @@ public class EgloConnectPacketHelper {
         return packet;
     }
 
+    public static byte[] makeCommandPacket(final byte[] key, String address, short dest_id, byte command,
+            final byte[] data) throws Exception {
+        return makeCommandPacket(key, address, dest_id, command, data, null);
+    }
 
     public static byte[] decryptPacket(final byte[] key, String address, final byte[] packet) throws Exception {
 
-        //Build nonce
+        // Build nonce
         byte[] tmp = hexStringToByteArray(address.replace(":", ""));
         byte[] a = new byte[tmp.length];
         for (int i = 0; i < tmp.length; i++) {
@@ -182,17 +184,17 @@ public class EgloConnectPacketHelper {
             }
         }
 
-
-        //Decrypt Payload
+        // Decrypt Payload
         byte[] payload = cryptPayload(key, nonce, Arrays.copyOfRange(packet, 7, packet.length));
 
-        //Compute checksum
+        // Compute checksum
         byte[] check = makeChecksum(key, nonce, payload);
 
-        //Check bytes
-        if (check[0] != packet[5] || check[1] != packet[6]) return null;
+        // Check bytes
+        if (check[0] != packet[5] || check[1] != packet[6])
+            return null;
 
-        //Decrypted packet
+        // Decrypted packet
         byte[] dec_packet = new byte[7 + payload.length];
         for (int i = 0; i < dec_packet.length; i++) {
             if (i < 7) {
@@ -205,8 +207,8 @@ public class EgloConnectPacketHelper {
         return dec_packet;
     }
 
-
-    public static byte[] makePairPacket(String mesh_name, String mesh_password, final byte[] session_random) throws Exception {
+    public static byte[] makePairPacket(String mesh_name, String mesh_password, final byte[] session_random)
+            throws Exception {
 
         byte[] m_n = new byte[16];
         byte[] tmp_n = mesh_name.getBytes(StandardCharsets.UTF_8);
@@ -248,8 +250,8 @@ public class EgloConnectPacketHelper {
         return packet;
     }
 
-
-    public static byte[] makeSessionKey(String mesh_name, String mesh_password, final byte[] session_random, final byte[] response_random) throws Exception {
+    public static byte[] makeSessionKey(String mesh_name, String mesh_password, final byte[] session_random,
+            final byte[] response_random) throws Exception {
 
         byte[] random = new byte[session_random.length + response_random.length];
         for (int i = 0; i < random.length; i++) {
@@ -281,13 +283,11 @@ public class EgloConnectPacketHelper {
             name_pass[j] = (byte) (m_n[j] ^ m_p[j]);
         }
 
-
         return encrypt(name_pass, random);
     }
 
-
     public static int crc16(byte[] arg) {
-        int[] polynom = {0x0, 0xa001};
+        int[] polynom = { 0x0, 0xa001 };
         int crc = 0xffff;
 
         for (int a : arg) {
@@ -300,7 +300,6 @@ public class EgloConnectPacketHelper {
         return crc;
     }
 
-
     public static byte[] hexStringToByteArray(String s) {
         int len = s.length();
         byte[] data = new byte[len / 2];
@@ -309,5 +308,4 @@ public class EgloConnectPacketHelper {
         }
         return data;
     }
-
 }

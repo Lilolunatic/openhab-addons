@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.egloconnect.internal;
 
+import java.util.UUID;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.bluetooth.BluetoothBindingConstants;
 import org.openhab.core.thing.ThingTypeUID;
@@ -42,7 +44,15 @@ public class EgloConnectBindingConstants {
     public static final String CHANNEL_ID_SEQUENCE_COLOR_DURATION = "sequence_color_duration";
     public static final String CHANNEL_ID_SEQUENCE_FADE_DURATION = "sequence_fade_duration";
 
+    public static final UUID STATUS_CHAR_UUID = UUID.fromString("00010203-0405-0607-0809-0a0b0c0d1911");
+    public static final UUID COMMAND_CHAR_UUID = UUID.fromString("00010203-0405-0607-0809-0a0b0c0d1912");
+    public static final UUID OTA_CHAR_UUID = UUID.fromString("00010203-0405-0607-0809-0a0b0c0d1913");
+    public static final UUID PAIR_CHAR_UUID = UUID.fromString("00010203-0405-0607-0809-0a0b0c0d1914");
+
     /*
+     * 
+     * 
+     * 
      * #: On/Off command. Data : one byte 0, 1
      * C_POWER = 0xd0
      * 

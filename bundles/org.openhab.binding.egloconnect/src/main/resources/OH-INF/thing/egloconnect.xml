@@ -27,6 +27,14 @@
 				<label>Address</label>
 				<description>Bluetooth address in XX:XX:XX:XX:XX:XX format</description>
 			</parameter>
+			<parameter name="meshName" type="text">
+				<label>Mesh Name</label>
+				<description>max 16 chars</description>
+			</parameter>
+			<parameter name="meshPassword" type="text">
+				<label>Mesh Password</label>
+				<description>max 16 chars</description>
+			</parameter>
 			<parameter name="refreshInterval" type="integer" min="10">
 				<label>Refresh Interval</label>
 				<description>States how often a refresh shall occur in seconds. This could have impact to battery
