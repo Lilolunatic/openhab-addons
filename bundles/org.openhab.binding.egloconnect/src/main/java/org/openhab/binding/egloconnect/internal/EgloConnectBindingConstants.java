@@ -49,37 +49,27 @@ public class EgloConnectBindingConstants {
     public static final UUID OTA_CHAR_UUID = UUID.fromString("00010203-0405-0607-0809-0a0b0c0d1913");
     public static final UUID PAIR_CHAR_UUID = UUID.fromString("00010203-0405-0607-0809-0a0b0c0d1914");
 
-    /*
-     * 
-     * 
-     * 
-     * #: On/Off command. Data : one byte 0, 1
-     * C_POWER = 0xd0
-     * 
-     * #: Data : one byte
-     * C_LIGHT_MODE = 0x33
-     * 
-     * #: Data : one byte 0 to 6
-     * C_PRESET = 0xc8
-     * 
-     * #: White temperature. one byte 0 to 0x7f
-     * C_WHITE_TEMPERATURE = 0xf0
-     * 
-     * #: one byte 1 to 0x7f
-     * C_WHITE_BRIGHTNESS = 0xf1
-     * 
-     * #: 4 bytes : 0x4 red green blue
-     * C_COLOR = 0xe2
-     * 
-     * #: one byte : 0xa to 0x64 ....
-     * C_COLOR_BRIGHTNESS = 0xf2
-     * 
-     * #: Data 4 bytes : How long a color is displayed in a sequence in milliseconds as
-     * #: an integer in little endian order
-     * C_SEQUENCE_COLOR_DURATION = 0xf5
-     * 
-     * #: Data 4 bytes : Duration of the fading between colors in a sequence, in
-     * #: milliseconds, as an integer in little endian order
-     * C_SEQUENCE_FADE_DURATION = 0xf6
-     */
+    public static final byte C_POWER = (byte) 0xd0;
+    public static final byte C_LIGHT_MODE = 0x33;
+    public static final byte C_PRESET = (byte) 0xc8;
+
+    // * #: White temperature. one byte 0 to 0x7f
+    // * C_WHITE_TEMPERATURE = 0xf0
+    // *
+    // * #: one byte 1 to 0x7f
+    // * C_WHITE_BRIGHTNESS = 0xf1
+    // *
+    // * #: 4 bytes : 0x4 red green blue
+    // * C_COLOR = 0xe2
+    // *
+    // * #: one byte : 0xa to 0x64 ....
+    // * C_COLOR_BRIGHTNESS = 0xf2
+    // *
+    // * #: Data 4 bytes : How long a color is displayed in a sequence in milliseconds as
+    // * #: an integer in little endian order
+    // * C_SEQUENCE_COLOR_DURATION = 0xf5
+    // *
+    // * #: Data 4 bytes : Duration of the fading between colors in a sequence, in
+    // * #: milliseconds, as an integer in little endian order
+    // * C_SEQUENCE_FADE_DURATION = 0xf6
 }

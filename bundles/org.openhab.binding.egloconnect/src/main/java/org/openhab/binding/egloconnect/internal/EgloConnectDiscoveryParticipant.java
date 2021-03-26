@@ -13,10 +13,7 @@
 
 package org.openhab.binding.egloconnect.internal;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -84,6 +81,7 @@ public class EgloConnectDiscoveryParticipant implements BluetoothDiscoveryPartic
     }
 
     private boolean isAwoxDevice(BluetoothDiscoveryDevice device) {
-        return true; // TODO implement real check
+        return device.getAddress().toString().toUpperCase().startsWith("A4:C1:38");
+        // TODO implement real check
     }
 }

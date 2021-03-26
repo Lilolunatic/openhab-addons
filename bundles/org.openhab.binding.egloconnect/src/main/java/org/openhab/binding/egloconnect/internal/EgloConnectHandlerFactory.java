@@ -52,7 +52,7 @@ public class EgloConnectHandlerFactory extends BaseThingHandlerFactory {
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
         if (thingTypeUID.equals(EgloConnectBindingConstants.THING_TYPE_AWOX_BULB)) {
-            logger.warn("createHandler(): return new handler for {}", thingTypeUID.toString());
+            logger.info("createHandler(): return new handler for {}", thingTypeUID.toString());
             return new EgloConnectHandler(thing);
         }
         return null;
