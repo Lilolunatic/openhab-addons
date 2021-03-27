@@ -17,7 +17,7 @@
 		<channels>
 			<channel id="power" typeId="system.power"/>
 			<channel id="white_temperature" typeId="system.color-temperature"/>
-			<channel id="white_brightness" typeId="system.brightness"/>
+			<channel id="brightness" typeId="system.brightness"/>
 			<channel id="color" typeId="system.color"/>
 			<channel id="color_brightness" typeId="system.brightness"/>
 		</channels>

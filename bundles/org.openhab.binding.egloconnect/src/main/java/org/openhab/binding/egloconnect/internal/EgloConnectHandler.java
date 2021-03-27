@@ -48,7 +48,8 @@ import org.slf4j.LoggerFactory;
 public class EgloConnectHandler extends ConnectedBluetoothHandler implements ResponseListener {
 
     // TODO timeout nicht zu lang auf commands warten sonst alles putt
-    //TODO schauen mit welchen ui elementen am besten ALLE channels ansteuern
+    // TODO schauen mit welchen ui elementen am besten ALLE channels ansteuern
+    // TODO doppelter brightness channel
 
     private final Logger logger = LoggerFactory.getLogger(EgloConnectHandler.class);
 
@@ -98,8 +99,8 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
                                 break;
                         }
                     } else {
-                        logger.warn("handleCommand(): power channel can't handle command of type: {}",
-                                command.getClass());
+                        logger.warn("handleCommand(): {} can't handle command of type: {}",
+                                EgloConnectBindingConstants.CHANNEL_ID_POWER, command.getClass());
                     }
                     break;
                 case EgloConnectBindingConstants.CHANNEL_ID_COLOR:
@@ -107,9 +108,34 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
                         this.setColor(((HSBType) command).getRed(), ((HSBType) command).getGreen(),
                                 ((HSBType) command).getBlue());
                     } else {
-                        logger.warn("handleCommand(): power channel can't handle command of type: {}",
-                                command.getClass());
+                        logger.warn("handleCommand(): {} can't handle command of type: {}",
+                                EgloConnectBindingConstants.CHANNEL_ID_COLOR, command.getClass());
                     }
+                    break;
+                case EgloConnectBindingConstants.CHANNEL_ID_COLOR_BRIGHTNESS:
+                    if (command instanceof PercentType) {
+                        this.setBrightness((PercentType) command);
+                    } else {
+                        logger.warn("handleCommand(): {} can't handle command of type: {}",
+                                EgloConnectBindingConstants.CHANNEL_ID_COLOR_BRIGHTNESS, command.getClass());
+                    }
+                    break;
+                case EgloConnectBindingConstants.CHANNEL_ID_WHITE_BRIGHTNESS:
+                    if (command instanceof PercentType) {
+                        this.setWhiteBrightness((PercentType) command);
+                    } else {
+                        logger.warn("handleCommand(): {} can't handle command of type: {}",
+                                EgloConnectBindingConstants.CHANNEL_ID_WHITE_BRIGHTNESS, command.getClass());
+                    }
+                    break;
+                case EgloConnectBindingConstants.CHANNEL_ID_WHITE_TEMPERATURE:
+                    if (command instanceof PercentType) {
+                        this.setWhiteTemperature((PercentType) command);
+                    } else {
+                        logger.warn("handleCommand(): {} can't handle command of type: {}",
+                                EgloConnectBindingConstants.CHANNEL_ID_WHITE_TEMPERATURE, command.getClass());
+                    }
+                    break;
                 default:
                     break;
             }
@@ -124,15 +150,6 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
         RESOLVING,
         RESOLVED,
     }
-    /*
-     * private enum CommandState {
-     * NEW,
-     * QUEUED,
-     * SENT,
-     * SUCCESS,
-     * FAIL
-     * }
-     */
 
     private enum ReadState {
         IDLE,
@@ -173,18 +190,6 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
      * }
      */
 
-    /*
-     * private void updateCommandState(CommandState cs) {
-     * stateLock.lock();
-     * try {
-     * commandState = cs;
-     * stateCondition.signalAll();
-     * } finally {
-     * stateLock.unlock();
-     * }
-     * }
-     */
-
     private void connect() {
 
         // TODO def connect(self, mesh_name = None, mesh_password = None):
@@ -198,27 +203,23 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
 
             if (device.getConnectionState() != BluetoothDevice.ConnectionState.CONNECTED) {
                 logger.warn("connect(): Device {} not connected!", address);
-                // updateCommandState(CommandState.FAIL);
                 egloConnectCommand.updateCommandState(CommandState.FAIL);
                 return;
             }
             if (!resolved) {
                 logger.warn("connect(): Services of device {} not resolved!", address);
-                // updateCommandState(CommandState.FAIL);
                 egloConnectCommand.updateCommandState(CommandState.FAIL);
                 return;
             }
             BluetoothCharacteristic pairChar = device.getCharacteristic(EgloConnectBindingConstants.PAIR_CHAR_UUID);
             if (pairChar == null) {
                 logger.warn("connect(): Characteristic {} not found!", EgloConnectBindingConstants.PAIR_CHAR_UUID);
-                // updateCommandState(CommandState.FAIL);
                 egloConnectCommand.updateCommandState(CommandState.FAIL);
                 return;
             }
             BluetoothCharacteristic statusChar = device.getCharacteristic(EgloConnectBindingConstants.STATUS_CHAR_UUID);
             if (statusChar == null) {
                 logger.warn("connect(): Characteristic {} not found!", EgloConnectBindingConstants.PAIR_CHAR_UUID);
-                // updateCommandState(CommandState.FAIL);
                 egloConnectCommand.updateCommandState(CommandState.FAIL);
                 return;
             }
@@ -230,55 +231,22 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
                     configuration.get().meshPassword, sessionRandom);
             pairChar.setValue(message);
             device.writeCharacteristic(pairChar);
-            // updateCommandState(CommandState.QUEUED);
             egloConnectCommand.updateCommandState(CommandState.QUEUED);
 
             // TODO timout + errorhandling statupdate whatever
 
-            /*
-             * stateLock.lock();
-             * try {
-             * while (commandState != CommandState.FAIL && commandState != CommandState.SENT) {
-             * stateCondition.await();
-             * }
-             * } finally {
-             * stateLock.unlock();
-             * }
-             */
             egloConnectCommand.awaitCommandStates(CommandState.FAIL, CommandState.SENT);
 
-            // updateCommandState(CommandState.NEW);
             egloConnectCommand.updateCommandState(CommandState.NEW);
-            byte[] status = {1};
+            byte[] status = { 1 };
             statusChar.setValue(status);
             device.writeCharacteristic(statusChar);
-            // updateCommandState(CommandState.QUEUED);
             egloConnectCommand.updateCommandState(CommandState.QUEUED);
 
-            /*
-             * stateLock.lock();
-             * try {
-             * while (commandState != CommandState.FAIL && commandState != CommandState.SENT) {
-             * stateCondition.await();
-             * }
-             * } finally {
-             * stateLock.unlock();
-             * }
-             */
             egloConnectCommand.awaitCommandStates(CommandState.FAIL, CommandState.SENT);
 
             device.readCharacteristic(pairChar);
 
-            /*
-             * stateLock.lock();
-             * try {
-             * while (commandState != CommandState.FAIL && commandState != CommandState.SUCCESS) {
-             * stateCondition.await();
-             * }
-             * } finally {
-             * stateLock.unlock();
-             * }
-             */
             egloConnectCommand.awaitCommandStates(CommandState.FAIL, CommandState.SUCCESS);
 
             byte[] response = pairChar.getByteValue();
@@ -304,9 +272,7 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
             logger.error("connect(): exception\n{}", e.getMessage());
             this.disconnect();
         } finally {
-            // logger.info("connect(): Command State: {}", commandState);
             logger.info("connect(): Command State: {}", egloConnectCommand.getCommandState());
-            // updateCommandState(CommandState.NEW);
             egloConnectCommand.updateCommandState(CommandState.NEW);
         }
     }
@@ -340,17 +306,15 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
 
     @Override
     public void onCharacteristicWriteComplete(BluetoothCharacteristic characteristic,
-                                              BluetoothCompletionStatus status) {
+            BluetoothCompletionStatus status) {
         super.onCharacteristicWriteComplete(characteristic, status);
 
         switch (status) {
             case SUCCESS:
                 egloConnectCommand.updateCommandState(CommandState.SENT);
-                // updateCommandState(CommandState.SENT);
                 break;
             default:
                 egloConnectCommand.updateCommandState(CommandState.FAIL);
-                // updateCommandState(CommandState.FAIL);
                 break;
         }
     }
@@ -362,11 +326,9 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
         switch (status) {
             case SUCCESS:
                 egloConnectCommand.updateCommandState(CommandState.SUCCESS);
-                // updateCommandState(CommandState.SUCCESS);
                 break;
             default:
                 egloConnectCommand.updateCommandState(CommandState.FAIL);
-                // updateCommandState(CommandState.FAIL);
                 break;
         }
     }
@@ -495,7 +457,7 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
         try {
 
             if (this.sessionKey.length == 0) {
-                logger.warn("writeCommand(): Device {} not connected!", address);
+                logger.warn("writeCommand(): Device {} not high level connected!", address);
                 // updateCommandState(CommandState.FAIL);
                 egloConnectCommand.updateCommandState(CommandState.FAIL);
                 return;
@@ -505,7 +467,6 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
             if (commandChar == null) {
                 logger.warn("writeCommand(): Characteristic {} not found!",
                         EgloConnectBindingConstants.COMMAND_CHAR_UUID);
-                // updateCommandState(CommandState.FAIL);
                 egloConnectCommand.updateCommandState(CommandState.FAIL);
                 return;
             }
@@ -515,29 +476,16 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
             logger.info("writeCommand(): {}: Writing command {} data {}", address.toString(), command, data);
             commandChar.setValue(packet);
             device.writeCharacteristic(commandChar);
-            // updateCommandState(CommandState.QUEUED);
             egloConnectCommand.updateCommandState(CommandState.QUEUED);
 
             // TODO timout + errorhandling statupdate whatever
 
-            /*
-             * stateLock.lock();
-             * try {
-             * while (commandState != CommandState.FAIL && commandState != CommandState.SENT) {
-             * stateCondition.await();
-             * }
-             * } finally {
-             * stateLock.unlock();
-             * }
-             */
             egloConnectCommand.awaitCommandStates(CommandState.FAIL, CommandState.SENT);
 
         } catch (Exception e) {
             logger.error("writeCommand(): exception\n{}", e.getMessage());
         } finally {
-            // logger.info("writeCommand(): Command State: {}", commandState);
             logger.info("writeCommand(): Command State: {}", egloConnectCommand.getCommandState());
-            // updateCommandState(CommandState.NEW);
             egloConnectCommand.updateCommandState(CommandState.NEW);
         }
     }
@@ -548,6 +496,7 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
     }
 
     private byte[] readStatus() throws Exception {
+        // TODO add async await logic
         BluetoothCharacteristic statusChar = device.getCharacteristic(EgloConnectBindingConstants.STATUS_CHAR_UUID);
         if (statusChar == null) {
             return new byte[0];
@@ -573,28 +522,26 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
         byte red = (byte) ((redPercent.intValue() * 255) / 100);
         byte green = (byte) ((greenPercent.intValue() * 255) / 100);
         byte blue = (byte) ((bluePercent.intValue() * 255) / 100);
-        byte[] data = {0x04, red, green, blue};
+        byte[] data = { 0x04, red, green, blue };
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_COLOR, data));
     }
-    //
-    // private void setBrightness(brightness) {
-    // //brightness in %
-    // byte[] data = new byte[1];
-    // data[] ={
-    // brightness
-    // } ;
-    // commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_COLOR_BRIGHTNESS, data));
-    // }
 
-    private void setWhiteBrightness(brightness) {
-        //brightness in 1-127
-        byte[] data = {brightness};
+    private void setBrightness(PercentType brightness) {
+        // brightness in %
+        byte[] data = { brightness.byteValue() };
+        commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_COLOR_BRIGHTNESS, data));
+    }
+
+    private void setWhiteBrightness(PercentType brightnessPercent) {
+        // brightness in 1-127
+        byte brightness = (byte) ((brightnessPercent.intValue() * 127) / 100);
+        byte[] data = { brightness };
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_WHITE_BRIGHTNESS, data));
     }
 
-    private void setWhiteTemperature(temperature) {
-        //brightness in %
-        byte[] data = {temperature};
+    private void setWhiteTemperature(PercentType temperature) {
+        // brightness in %
+        byte[] data = { temperature.byteValue() };
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_WHITE_TEMPERATURE, data));
     }
 
