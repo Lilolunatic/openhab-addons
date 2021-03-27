@@ -48,8 +48,8 @@ import org.slf4j.LoggerFactory;
 public class EgloConnectHandler extends ConnectedBluetoothHandler implements ResponseListener {
 
     // TODO timeout nicht zu lang auf commands warten sonst alles putt
-    // TODO schauen mit welchen ui elementen am besten ALLE channels ansteuern
-    // TODO doppelter brightness channel
+    // TODO widget initial elemnte fehlen-> init wert von white/color variable
+    //TODO widget updaten/ read state
 
     private final Logger logger = LoggerFactory.getLogger(EgloConnectHandler.class);
 
@@ -238,7 +238,7 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
             egloConnectCommand.awaitCommandStates(CommandState.FAIL, CommandState.SENT);
 
             egloConnectCommand.updateCommandState(CommandState.NEW);
-            byte[] status = { 1 };
+            byte[] status = {1};
             statusChar.setValue(status);
             device.writeCharacteristic(statusChar);
             egloConnectCommand.updateCommandState(CommandState.QUEUED);
@@ -306,7 +306,7 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
 
     @Override
     public void onCharacteristicWriteComplete(BluetoothCharacteristic characteristic,
-            BluetoothCompletionStatus status) {
+                                              BluetoothCompletionStatus status) {
         super.onCharacteristicWriteComplete(characteristic, status);
 
         switch (status) {
@@ -522,26 +522,26 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
         byte red = (byte) ((redPercent.intValue() * 255) / 100);
         byte green = (byte) ((greenPercent.intValue() * 255) / 100);
         byte blue = (byte) ((bluePercent.intValue() * 255) / 100);
-        byte[] data = { 0x04, red, green, blue };
+        byte[] data = {0x04, red, green, blue};
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_COLOR, data));
     }
 
     private void setBrightness(PercentType brightness) {
         // brightness in %
-        byte[] data = { brightness.byteValue() };
+        byte[] data = {brightness.byteValue()};
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_COLOR_BRIGHTNESS, data));
     }
 
     private void setWhiteBrightness(PercentType brightnessPercent) {
         // brightness in 1-127
         byte brightness = (byte) ((brightnessPercent.intValue() * 127) / 100);
-        byte[] data = { brightness };
+        byte[] data = {brightness};
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_WHITE_BRIGHTNESS, data));
     }
 
     private void setWhiteTemperature(PercentType temperature) {
         // brightness in %
-        byte[] data = { temperature.byteValue() };
+        byte[] data = {temperature.byteValue()};
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_WHITE_TEMPERATURE, data));
     }
 
