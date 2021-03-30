@@ -47,9 +47,10 @@ import org.slf4j.LoggerFactory;
 @NonNullByDefault
 public class EgloConnectHandler extends ConnectedBluetoothHandler implements ResponseListener {
 
-    // TODO timeout nicht zu lang auf commands warten sonst alles putt
-    // TODO widget initial elemnte fehlen-> init wert von white/color variable
-    //TODO widget updaten/ read state
+    // TODO timeout + errorhandling nicht zu lang auf commands warten sonst alles putt
+    // TODO widget initial fehlen elemente -> init wert von white/color variable
+    // TODO widget updaten/ read state
+    // TODO entweder in bluetooth binding oder außerhalb anzeigen, nicht beides
 
     private final Logger logger = LoggerFactory.getLogger(EgloConnectHandler.class);
 
@@ -65,18 +66,9 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
 
     private byte[] sessionRandom = new byte[8];
     private byte[] sessionKey = new byte[0];
-    private byte[] meshName = "unpaired".getBytes(StandardCharsets.UTF_8);
-    private byte[] meshPassword = "1234".getBytes(StandardCharsets.UTF_8);
     private short meshID = 0;
 
     private EgloConnectCommand egloConnectCommand = new EgloConnectCommand();
-
-    /*
-     * private final Lock stateLock = new ReentrantLock();
-     * private final Condition stateCondition = stateLock.newCondition();
-     *
-     * private CommandState commandState = CommandState.NEW;
-     */
 
     private @Nullable ExecutorService commandExecutor;
 
@@ -192,11 +184,6 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
 
     private void connect() {
 
-        // TODO def connect(self, mesh_name = None, mesh_password = None):
-        // if mesh_name : self.mesh_name = mesh_name.encode ()
-        // if mesh_password : self.mesh_password = mesh_password.encode ()
-        // assert len(self.mesh_name) <= 16, "mesh_name can hold max 16 bytes"
-        // assert len(self.mesh_password) <= 16, "mesh_password can hold max 16 bytes"
         try {
 
             logger.info("connect(): Connect to device {}...", address);
@@ -233,12 +220,10 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
             device.writeCharacteristic(pairChar);
             egloConnectCommand.updateCommandState(CommandState.QUEUED);
 
-            // TODO timout + errorhandling statupdate whatever
-
             egloConnectCommand.awaitCommandStates(CommandState.FAIL, CommandState.SENT);
 
             egloConnectCommand.updateCommandState(CommandState.NEW);
-            byte[] status = {1};
+            byte[] status = { 1 };
             statusChar.setValue(status);
             device.writeCharacteristic(statusChar);
             egloConnectCommand.updateCommandState(CommandState.QUEUED);
@@ -306,7 +291,7 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
 
     @Override
     public void onCharacteristicWriteComplete(BluetoothCharacteristic characteristic,
-                                              BluetoothCompletionStatus status) {
+            BluetoothCompletionStatus status) {
         super.onCharacteristicWriteComplete(characteristic, status);
 
         switch (status) {
@@ -380,6 +365,10 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
 
     private boolean setMesh(String newMeshName, String newMeshPassword, String newMeshLongTermKey) throws Exception {
 
+        // TODO config meshname ändern logik
+        // assert len(self.mesh_name) <= 16, "mesh_name can hold max 16 bytes"
+        // assert len(self.mesh_password) <= 16, "mesh_password can hold max 16 bytes"
+
         if (this.sessionKey.length == 1) {
             logger.warn("setMesh(): Device {} not connected!", address);
             return false;
@@ -400,6 +389,7 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
         BluetoothCharacteristic pairChar = device.getCharacteristic(EgloConnectBindingConstants.PAIR_CHAR_UUID);
         if (pairChar == null)
             return false;
+
         // # FIXME : Removing the delegate as a workaround to a bluepy.btle.BTLEException
         // # similar to https://github.com/IanHarvey/bluepy/issues/182 That may be
         // # a bluepy bug or I'm using it wrong or both ...
@@ -442,8 +432,8 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
         // TODO self.btdevice.setDelegate (Delegate (self))
 
         if (response[0] == 0x07) {
-            this.meshName = newMeshName.getBytes(StandardCharsets.UTF_8);
-            this.meshPassword = newMeshPassword.getBytes(StandardCharsets.UTF_8);
+            // this.meshName = newMeshName.getBytes(StandardCharsets.UTF_8);
+            // this.meshPassword = newMeshPassword.getBytes(StandardCharsets.UTF_8);
             logger.info("setMesh(): Mesh network settings accepted.");
             return true;
         } else {
@@ -477,8 +467,6 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
             commandChar.setValue(packet);
             device.writeCharacteristic(commandChar);
             egloConnectCommand.updateCommandState(CommandState.QUEUED);
-
-            // TODO timout + errorhandling statupdate whatever
 
             egloConnectCommand.awaitCommandStates(CommandState.FAIL, CommandState.SENT);
 
@@ -522,39 +510,26 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
         byte red = (byte) ((redPercent.intValue() * 255) / 100);
         byte green = (byte) ((greenPercent.intValue() * 255) / 100);
         byte blue = (byte) ((bluePercent.intValue() * 255) / 100);
-        byte[] data = {0x04, red, green, blue};
+        byte[] data = { 0x04, red, green, blue };
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_COLOR, data));
     }
 
     private void setBrightness(PercentType brightness) {
         // brightness in %
-        byte[] data = {brightness.byteValue()};
+        byte[] data = { brightness.byteValue() };
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_COLOR_BRIGHTNESS, data));
     }
 
     private void setWhiteBrightness(PercentType brightnessPercent) {
         // brightness in 1-127
         byte brightness = (byte) ((brightnessPercent.intValue() * 127) / 100);
-        byte[] data = {brightness};
+        byte[] data = { brightness };
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_WHITE_BRIGHTNESS, data));
     }
 
     private void setWhiteTemperature(PercentType temperature) {
         // brightness in %
-        byte[] data = {temperature.byteValue()};
+        byte[] data = { temperature.byteValue() };
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_WHITE_TEMPERATURE, data));
     }
-
-    // private void setWhite(temperature, brightness) {
-    // //brightness in %
-    // byte[] data = new byte[1];
-    // data[] ={
-    // temperature
-    // } ;
-    // commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_WHITE_TEMPERATURE, data));
-    // data[] ={
-    // brightness
-    // } ;
-    // commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_WHITE_BRIGHTNESS, data));
-    // }
 }
