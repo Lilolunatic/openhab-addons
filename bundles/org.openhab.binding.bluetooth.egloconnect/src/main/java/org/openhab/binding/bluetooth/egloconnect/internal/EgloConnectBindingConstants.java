@@ -10,7 +10,7 @@
  * <p>
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.egloconnect.internal;
+package org.openhab.binding.bluetooth.egloconnect.internal;
 
 import java.util.UUID;
 
@@ -27,11 +27,11 @@ import org.openhab.core.thing.ThingTypeUID;
 @NonNullByDefault
 public class EgloConnectBindingConstants {
 
-    // private static final String BINDING_ID = "bluetooth";
+    private static final String BINDING_ID = "egloconnect";
 
     // List of all Thing Type UIDs
     public static final ThingTypeUID THING_TYPE_AWOX_BULB = new ThingTypeUID(BluetoothBindingConstants.BINDING_ID,
-            "egloconnect");
+            BINDING_ID);
 
     // List of all Channel ids
     public static final String CHANNEL_ID_POWER = "power";

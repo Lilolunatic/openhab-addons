@@ -10,9 +10,7 @@
  * <p>
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.egloconnect.internal;
-
-import static org.openhab.binding.egloconnect.internal.EgloConnectBindingConstants.*;
+package org.openhab.binding.bluetooth.egloconnect.internal;
 
 import java.util.Collections;
 import java.util.Set;

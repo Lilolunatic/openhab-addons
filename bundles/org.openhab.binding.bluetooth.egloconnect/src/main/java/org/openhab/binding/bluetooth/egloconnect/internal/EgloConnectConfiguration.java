@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.egloconnect.internal;
+package org.openhab.binding.bluetooth.egloconnect.internal;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 

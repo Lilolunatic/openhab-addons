@@ -1,4 +1,4 @@
-package org.openhab.binding.egloconnect.internal;
+package org.openhab.binding.bluetooth.egloconnect.internal;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;

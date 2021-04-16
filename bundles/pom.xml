@@ -172,7 +172,7 @@
 
         <module>org.openhab.binding.ecobee</module>
 
-        <module>org.openhab.binding.egloconnect</module>
+        <module>org.openhab.binding.bluetooth.egloconnect</module>
 
         <module>org.openhab.binding.elerotransmitterstick</module>
 

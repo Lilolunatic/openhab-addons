@@ -1,12 +1,12 @@
-package org.openhab.binding.egloconnect;
+package org.openhab.binding.bluetooth.egloconnect;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.openhab.binding.egloconnect.internal.EgloConnectPacketHelper.hexStringToByteArray;
+import static org.openhab.binding.bluetooth.egloconnect.internal.EgloConnectPacketHelper.hexStringToByteArray;
 
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.*;
-import org.openhab.binding.egloconnect.internal.EgloConnectPacketHelper;
+import org.openhab.binding.bluetooth.egloconnect.internal.EgloConnectPacketHelper;
 
 public class EgloConnectPacketHelperTest {
 

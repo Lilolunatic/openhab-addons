@@ -1,4 +1,4 @@
-package org.openhab.binding.egloconnect.internal.command;
+package org.openhab.binding.bluetooth.egloconnect.internal.command;
 
 import java.util.ArrayList;
 import java.util.Arrays;
