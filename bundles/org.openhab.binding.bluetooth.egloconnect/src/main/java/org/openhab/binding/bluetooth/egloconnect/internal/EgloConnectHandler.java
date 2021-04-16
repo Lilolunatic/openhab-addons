@@ -12,7 +12,6 @@
  */
 package org.openhab.binding.bluetooth.egloconnect.internal;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.*;
@@ -69,7 +68,8 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
 
     private EgloConnectCommand egloConnectCommand = new EgloConnectCommand();
 
-    private @Nullable ExecutorService commandExecutor;
+    private @Nullable
+    ExecutorService commandExecutor;
 
     public EgloConnectHandler(Thing thing) {
         super(thing);
@@ -84,7 +84,6 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
                         switch ((OnOffType) command) {
                             case ON:
                                 this.turnOn();
-                                logger.info("turn on");
                                 break;
                             case OFF:
                                 this.turnOff();
@@ -169,20 +168,65 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
         }
     }
 
-    private void executePeridioc() {
-        sinceLastReadSec.addAndGet(CHECK_PERIOD_SEC);
-        execute();
+    @Override
+    public void onConnectionStateChange(BluetoothConnectionStatusNotification connectionNotification) {
+        super.onConnectionStateChange(connectionNotification);
+        switch (connectionNotification.getConnectionState()) {
+            case DISCOVERED:
+                break;
+            case CONNECTED:
+                logger.info("connect(): BLEConnected, resolved: {}.", resolved);
+                if (resolved) {
+                    commandExecutor.execute(this::connect);
+                }
+                break;
+            case DISCONNECTED:
+                this.sessionKey = new byte[0];
+                break;
+            default:
+                break;
+        }
     }
-    /*
-     *
-     * private boolean isTimeToRead() {
-     * int sinceLastRead = sinceLastReadSec.get();
-     * logger.debug("Time since last update: {} sec", sinceLastRead);
-     * return sinceLastRead >= refreshInterval;
-     * }
-     */
+
+    @Override
+    public void onServicesDiscovered() {
+        super.onServicesDiscovered();
+        logger.info("connect(): BLEConnected, BLEServices discovered");
+        commandExecutor.execute(this::connect);
+    }
+
+    @Override
+    public void onCharacteristicWriteComplete(BluetoothCharacteristic characteristic,
+                                              BluetoothCompletionStatus status) {
+        super.onCharacteristicWriteComplete(characteristic, status);
+
+        switch (status) {
+            case SUCCESS:
+                egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.SENT);
+                break;
+            default:
+                egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.FAIL);
+                break;
+        }
+    }
+
+    @Override
+    public void onCharacteristicReadComplete(BluetoothCharacteristic characteristic, BluetoothCompletionStatus status) {
+        super.onCharacteristicReadComplete(characteristic, status);
+
+        switch (status) {
+            case SUCCESS:
+                egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.SUCCESS);
+                break;
+            default:
+                egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.FAIL);
+                break;
+        }
+    }
+
 
     private void connect() {
+        //TODO abbruch bei fail
 
         try {
 
@@ -223,13 +267,14 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
             egloConnectCommand.awaitCommandStates(EgloConnectCommand.CommandState.FAIL, EgloConnectCommand.CommandState.SENT);
 
             egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.NEW);
-            byte[] status = { 1 };
+            byte[] status = {1};
             statusChar.setValue(status);
             device.writeCharacteristic(statusChar);
             egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.QUEUED);
 
             egloConnectCommand.awaitCommandStates(EgloConnectCommand.CommandState.FAIL, EgloConnectCommand.CommandState.SENT);
 
+            egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.QUEUED);
             device.readCharacteristic(pairChar);
 
             egloConnectCommand.awaitCommandStates(EgloConnectCommand.CommandState.FAIL, EgloConnectCommand.CommandState.SUCCESS);
@@ -262,84 +307,11 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
         }
     }
 
-    @Override
-    public void onConnectionStateChange(BluetoothConnectionStatusNotification connectionNotification) {
-        super.onConnectionStateChange(connectionNotification);
-        switch (connectionNotification.getConnectionState()) {
-            case DISCOVERED:
-                break;
-            case CONNECTED:
-                logger.info("connect(): BLEConnected, resolved: {}.", resolved);
-                if (resolved) {
-                    commandExecutor.execute(this::connect);
-                }
-                break;
-            case DISCONNECTED:
-                this.sessionKey = new byte[0];
-                break;
-            default:
-                break;
-        }
-    }
-
-    @Override
-    public void onServicesDiscovered() {
-        super.onServicesDiscovered();
-        logger.info("connect(): BLEConnected, BLEServices discovered");
-        commandExecutor.execute(this::connect);
-    }
-
-    @Override
-    public void onCharacteristicWriteComplete(BluetoothCharacteristic characteristic,
-            BluetoothCompletionStatus status) {
-        super.onCharacteristicWriteComplete(characteristic, status);
-
-        switch (status) {
-            case SUCCESS:
-                egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.SENT);
-                break;
-            default:
-                egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.FAIL);
-                break;
-        }
-    }
-
-    @Override
-    public void onCharacteristicReadComplete(BluetoothCharacteristic characteristic, BluetoothCompletionStatus status) {
-        super.onCharacteristicReadComplete(characteristic, status);
-
-        switch (status) {
-            case SUCCESS:
-                egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.SUCCESS);
-                break;
-            default:
-                egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.FAIL);
-                break;
-        }
-    }
-
     private void disconnect() {
 
         logger.info("connect(): Disconnecting device {}!", address);
         device.disconnect();
         sessionKey = new byte[1];
-    }
-
-    private synchronized void execute() {
-        BluetoothDevice.ConnectionState connectionState = device.getConnectionState();
-        logger.info("execute(): Device {} state is {}, serviceState {}, readState {}", address, connectionState,
-                serviceState, readState);
-
-        switch (connectionState) {
-            case DISCOVERED:
-            case DISCONNECTED:
-                connect();
-                break;
-            case CONNECTED:
-                break;
-            default:
-                break;
-        }
     }
 
     @Override
@@ -354,93 +326,16 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
         logger.info("initialize(): Mesh Name: {}, Mesh Password: {}", configuration.get().meshName,
                 configuration.get().meshPassword);
 
-        // TODO remote mit einbingen damit in gleichem mesh
+        //TODO remote mit einbingen damit in gleichem mesh
 
         commandExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory(thing.getUID().getAsString(), true));
 
         if (device.getConnectionState() == BluetoothDevice.ConnectionState.CONNECTED && resolved) {
             commandExecutor.execute(this::connect);
         }
+        //scheduledTask = scheduler.scheduleWithFixedDelay(this::updateChannels, 0, refreshInterval, TimeUnit.SECONDS);
     }
 
-    private boolean setMesh(String newMeshName, String newMeshPassword, String newMeshLongTermKey) throws Exception {
-
-        // TODO config meshname ändern logik
-        // assert len(self.mesh_name) <= 16, "mesh_name can hold max 16 bytes"
-        // assert len(self.mesh_password) <= 16, "mesh_password can hold max 16 bytes"
-
-        if (this.sessionKey.length == 1) {
-            logger.warn("setMesh(): Device {} not connected!", address);
-            return false;
-        }
-        if (newMeshName.length() > 16) {
-            logger.warn("setMesh(): Mesh Name {} is too long!", newMeshName);
-            return false;
-        }
-        if (newMeshPassword.length() > 16) {
-            logger.warn("setMesh(): Mesh Password {} is too long!", newMeshPassword);
-            return false;
-        }
-        if (newMeshLongTermKey.length() > 16) {
-            logger.warn("setMesh(): Mesh Long Term Key {} is too long!", newMeshLongTermKey);
-            return false;
-        }
-
-        BluetoothCharacteristic pairChar = device.getCharacteristic(EgloConnectBindingConstants.PAIR_CHAR_UUID);
-        if (pairChar == null)
-            return false;
-
-        // # FIXME : Removing the delegate as a workaround to a bluepy.btle.BTLEException
-        // # similar to https://github.com/IanHarvey/bluepy/issues/182 That may be
-        // # a bluepy bug or I'm using it wrong or both ...
-
-        // TODO self.btdevice.setDelegate (None)
-
-        byte[] message = EgloConnectPacketHelper.encrypt(this.sessionKey, newMeshName.getBytes(StandardCharsets.UTF_8));
-        byte[] tmp = new byte[1 + message.length];
-        tmp[0] = 0x4;
-        for (int i = 0; i < message.length; i++) {
-            tmp[i + 1] = message[i];
-        }
-        message = tmp;
-        pairChar.setValue(message);
-        device.writeCharacteristic(pairChar);
-
-        message = EgloConnectPacketHelper.encrypt(this.sessionKey, newMeshPassword.getBytes(StandardCharsets.UTF_8));
-        tmp = new byte[1 + message.length];
-        tmp[0] = 0x5;
-        for (int i = 0; i < message.length; i++) {
-            tmp[i + 1] = message[i];
-        }
-        message = tmp;
-        pairChar.setValue(message);
-        device.writeCharacteristic(pairChar);
-
-        message = EgloConnectPacketHelper.encrypt(this.sessionKey, newMeshLongTermKey.getBytes(StandardCharsets.UTF_8));
-        tmp = new byte[1 + message.length];
-        tmp[0] = 0x6;
-        for (int i = 0; i < message.length; i++) {
-            tmp[i + 1] = message[i];
-        }
-        pairChar.setValue(message);
-        device.writeCharacteristic(pairChar);
-        TimeUnit.SECONDS.sleep(1);
-
-        device.readCharacteristic(pairChar);
-        byte[] response = pairChar.getByteValue();
-
-        // TODO self.btdevice.setDelegate (Delegate (self))
-
-        if (response[0] == 0x07) {
-            // this.meshName = newMeshName.getBytes(StandardCharsets.UTF_8);
-            // this.meshPassword = newMeshPassword.getBytes(StandardCharsets.UTF_8);
-            logger.info("setMesh(): Mesh network settings accepted.");
-            return true;
-        } else {
-            logger.warn("setMesh(): Mesh network settings change failed!");
-            return false;
-        }
-    }
 
     private void writeCommand(byte command, byte[] data, short dest) {
 
@@ -483,17 +378,6 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
         this.writeCommand(command, data, dest);
     }
 
-    private byte[] readStatus() throws Exception {
-        // TODO add async await logic
-        BluetoothCharacteristic statusChar = device.getCharacteristic(EgloConnectBindingConstants.STATUS_CHAR_UUID);
-        if (statusChar == null) {
-            return new byte[0];
-        }
-        device.readCharacteristic(statusChar);
-        byte[] packet = statusChar.getByteValue();
-        return EgloConnectPacketHelper.decryptPacket(this.sessionKey, address.toString(), packet);
-    }
-
     private void turnOn() {
         byte[] data = new byte[1];
         data[0] = 0x01;
@@ -510,26 +394,214 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
         byte red = (byte) ((redPercent.intValue() * 255) / 100);
         byte green = (byte) ((greenPercent.intValue() * 255) / 100);
         byte blue = (byte) ((bluePercent.intValue() * 255) / 100);
-        byte[] data = { 0x04, red, green, blue };
+        byte[] data = {0x04, red, green, blue};
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_COLOR, data));
     }
 
     private void setBrightness(PercentType brightness) {
         // brightness in %
-        byte[] data = { brightness.byteValue() };
+        byte[] data = {brightness.byteValue()};
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_COLOR_BRIGHTNESS, data));
     }
 
     private void setWhiteBrightness(PercentType brightnessPercent) {
         // brightness in 1-127
         byte brightness = (byte) ((brightnessPercent.intValue() * 127) / 100);
-        byte[] data = { brightness };
+        byte[] data = {brightness};
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_WHITE_BRIGHTNESS, data));
     }
 
     private void setWhiteTemperature(PercentType temperature) {
         // brightness in %
-        byte[] data = { temperature.byteValue() };
+        byte[] data = {temperature.byteValue()};
         commandExecutor.execute(() -> writeCommand(EgloConnectBindingConstants.C_WHITE_TEMPERATURE, data));
     }
+
+
+
+
+
+
+    /*
+
+
+    private byte[] readStatus() {
+        // TODO add async await logic
+        BluetoothCharacteristic statusChar = device.getCharacteristic(EgloConnectBindingConstants.STATUS_CHAR_UUID);
+        if (statusChar == null) {
+            return new byte[0];
+        }
+        egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.QUEUED);
+        device.readCharacteristic(statusChar);
+        egloConnectCommand.awaitCommandStates(EgloConnectCommand.CommandState.FAIL, EgloConnectCommand.CommandState.SUCCESS);
+
+        byte[] packet = statusChar.getByteValue();
+        try {
+            return EgloConnectPacketHelper.decryptPacket(this.sessionKey, address.toString(), packet);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new byte[0];
+        }
+    }
+
+
+    private void updateChannels() {
+        commandExecutor.execute(this::readStatus);
+
+        updateState(EgloConnectBindingConstants.CHANNEL_ID_POWER, OnOffType.valueOf("ON"));
+        updateState(EgloConnectBindingConstants.CHANNEL_ID_COLOR, QuantityType.valueOf(Double.valueOf(parser.getTemperature()), SIUnits.CELSIUS));
+        updateState(EgloConnectBindingConstants.CHANNEL_ID_COLOR_BRIGHTNESS, QuantityType.valueOf(Double.valueOf(parser.getPressure()), Units.MILLIBAR));
+        updateState(EgloConnectBindingConstants.CHANNEL_ID_WHITE_BRIGHTNESS, QuantityType.valueOf(Double.valueOf(parser.getCo2()), Units.PARTS_PER_MILLION));
+        updateState(EgloConnectBindingConstants.CHANNEL_ID_WHITE_TEMPERATURE, QuantityType.valueOf(Double.valueOf(parser.getTvoc()), PARTS_PER_BILLION));
+    }
+
+
+      private synchronized void execute() {
+          BluetoothDevice.ConnectionState connectionState = device.getConnectionState();
+          logger.info("execute(): Device {} state is {}, serviceState {}, readState {}", address, connectionState,
+                  serviceState, readState);
+
+          switch (connectionState) {
+              case DISCOVERED:
+              case DISCONNECTED:
+                  connect();
+                  break;
+              case CONNECTED:
+                  break;
+              default:
+                  break;
+          }
+      }
+  */
+
+ /*
+    private boolean setMesh(String newMeshName, String newMeshPassword, String newMeshLongTermKey) throws Exception {
+
+        // TODO config meshname ändern logik
+        try {
+
+            logger.info("setMesh(): New Mesh Parameters for device {}...", address);
+
+
+            if (this.sessionKey.length == 0) {
+                logger.warn("setMesh(): Device {} not high level connected!", address);
+                egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.FAIL);
+                return false;
+            }
+            if (newMeshName.length() > 16) {
+                logger.warn("setMesh(): Mesh Name {} is too long!", newMeshName);
+                egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.FAIL);
+                return false;
+            }
+            if (newMeshPassword.length() > 16) {
+                logger.warn("setMesh(): Mesh Password {} is too long!", newMeshPassword);
+                egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.FAIL);
+                return false;
+            }
+            if (newMeshLongTermKey.length() > 16) {
+                logger.warn("setMesh(): Mesh Long Term Key {} is too long!", newMeshLongTermKey);
+                egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.FAIL);
+                return false;
+            }
+            BluetoothCharacteristic pairChar = device.getCharacteristic(EgloConnectBindingConstants.PAIR_CHAR_UUID);
+            if (pairChar == null) {
+                logger.warn("connect(): Characteristic {} not found!", EgloConnectBindingConstants.PAIR_CHAR_UUID);
+                egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.FAIL);
+                return false;
+            }
+
+            egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.NEW);
+            byte[] message = EgloConnectPacketHelper.encrypt(this.sessionKey, newMeshName.getBytes(StandardCharsets.UTF_8));
+            byte[] tmp = new byte[1 + message.length];
+            tmp[0] = 0x4;
+            for (int i = 0; i < message.length; i++) {
+                tmp[i + 1] = message[i];
+            }
+            message = tmp;
+            pairChar.setValue(message);
+            egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.QUEUED);
+            device.writeCharacteristic(pairChar);
+            egloConnectCommand.awaitCommandStates(EgloConnectCommand.CommandState.FAIL, EgloConnectCommand.CommandState.SENT);
+
+            egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.NEW);
+            message = EgloConnectPacketHelper.encrypt(this.sessionKey, newMeshPassword.getBytes(StandardCharsets.UTF_8));
+            tmp = new byte[1 + message.length];
+            tmp[0] = 0x5;
+            for (int i = 0; i < message.length; i++) {
+                tmp[i + 1] = message[i];
+            }
+            message = tmp;
+            pairChar.setValue(message);
+            egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.QUEUED);
+            device.writeCharacteristic(pairChar);
+            egloConnectCommand.awaitCommandStates(EgloConnectCommand.CommandState.FAIL, EgloConnectCommand.CommandState.SENT);
+
+            egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.NEW);
+            message = EgloConnectPacketHelper.encrypt(this.sessionKey, newMeshLongTermKey.getBytes(StandardCharsets.UTF_8));
+            tmp = new byte[1 + message.length];
+            tmp[0] = 0x6;
+            for (int i = 0; i < message.length; i++) {
+                tmp[i + 1] = message[i];
+            }
+            pairChar.setValue(message);
+            egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.QUEUED);
+            device.writeCharacteristic(pairChar);
+            egloConnectCommand.awaitCommandStates(EgloConnectCommand.CommandState.FAIL, EgloConnectCommand.CommandState.SENT);
+
+            egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.QUEUED);
+            device.readCharacteristic(pairChar);
+            egloConnectCommand.awaitCommandStates(EgloConnectCommand.CommandState.FAIL, EgloConnectCommand.CommandState.SUCCESS);
+
+            byte[] response = pairChar.getByteValue();
+
+            if (response[0] == 0x07) {
+                logger.info("setMesh(): Mesh network settings accepted.");
+                return true;
+            } else {
+                logger.warn("setMesh(): Mesh network settings change failed!");
+                return false;
+            }
+        } catch (Exception e) {
+            logger.error("setMesh(): exception\n{}", e.getMessage());
+            return false;
+        } finally {
+            logger.info("setMesh(): Command State: {}", egloConnectCommand.getCommandState());
+            egloConnectCommand.updateCommandState(EgloConnectCommand.CommandState.NEW);
+        }
+    }
+
+
+    //TODO setMesh debuggen, resoonse = 14 statt erwartet 7
+    @Override
+    public void handleConfigurationUpdate(Map<String, Object> configurationParameters) {
+
+        logger.info("{} config updated!", getThing().getUID());
+        String newMName = (@NonNull String) configurationParameters.get("meshName");
+        String newMPassword = (@NonNull String) configurationParameters.get("meshPassword");
+        //TODO
+        String newMeshLongTermKey = "1234567890";
+
+        if (device.getConnectionState() == BluetoothDevice.ConnectionState.CONNECTED && resolved) {
+            try {
+                if (!newMPassword.equals(configuration.get().meshPassword) || !newMName.equals(configuration.get().meshName)) {
+
+                    logger.info("set new mesh name: {} and new password: {}", newMName, newMPassword);
+
+                    if (setMesh(newMName, newMPassword, newMeshLongTermKey)) {
+                        logger.info("setting new mesh stuff success");
+                        if (configuration.isPresent()) {
+                            configuration.get().meshName = newMName;
+                            configuration.get().meshPassword = newMPassword;
+                            //TODO ? ode rneu connect ?
+                            super.handleConfigurationUpdate(configurationParameters);
+                        }
+                    } else {
+                        logger.warn("setting new mesh stuff failed");
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }*/
 }

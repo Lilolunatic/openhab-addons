@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 public class EgloConnectHandlerFactory extends BaseThingHandlerFactory {
 
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections
-            .singleton(EgloConnectBindingConstants.THING_TYPE_AWOX_BULB);
+            .singleton(EgloConnectBindingConstants.THING_TYPE_BULB);
 
     private final Logger logger = LoggerFactory.getLogger(EgloConnectHandlerFactory.class);
 
@@ -49,7 +49,7 @@ public class EgloConnectHandlerFactory extends BaseThingHandlerFactory {
     @Override
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
-        if (thingTypeUID.equals(EgloConnectBindingConstants.THING_TYPE_AWOX_BULB)) {
+        if (thingTypeUID.equals(EgloConnectBindingConstants.THING_TYPE_BULB)) {
             logger.info("createHandler(): return new handler for {}", thingTypeUID.toString());
             return new EgloConnectHandler(thing);
         }

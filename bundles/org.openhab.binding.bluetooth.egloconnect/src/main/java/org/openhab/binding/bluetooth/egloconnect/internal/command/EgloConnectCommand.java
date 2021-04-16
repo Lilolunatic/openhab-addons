@@ -2,6 +2,7 @@ package org.openhab.binding.bluetooth.egloconnect.internal.command;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -12,18 +13,18 @@ public class EgloConnectCommand {
     final Condition stateCondition;
     CommandState commandState;
 
-    public EgloConnectCommand() {
-        this.stateLock = new ReentrantLock();
-        this.stateCondition = stateLock.newCondition();
-        this.commandState = CommandState.NEW;
-    }
-
     public enum CommandState {
         NEW,
         QUEUED,
         SENT,
         SUCCESS,
         FAIL
+    }
+
+    public EgloConnectCommand() {
+        this.stateLock = new ReentrantLock();
+        this.stateCondition = stateLock.newCondition();
+        this.commandState = CommandState.NEW;
     }
 
     public void updateCommandState(CommandState commandState) {
@@ -36,21 +37,22 @@ public class EgloConnectCommand {
         }
     }
 
-    // public void awaitCommandStates(ArrayList<CommandState> commandStates) {
     public void awaitCommandStates(CommandState... args) {
 
         ArrayList<CommandState> list = new ArrayList<>(Arrays.asList(args));
 
         this.stateLock.lock();
 
-        while (!list.contains(commandState)) {
-            try {
-                stateCondition.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } finally {
-                stateLock.unlock();
+        try {
+            while (!list.contains(commandState)) {
+                if (!stateCondition.await(3, TimeUnit.SECONDS)) {
+                    return;
+                }
             }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            stateLock.unlock();
         }
     }
 

@@ -42,13 +42,14 @@ public class EgloConnectDiscoveryParticipant implements BluetoothDiscoveryPartic
 
     @Override
     public Set<ThingTypeUID> getSupportedThingTypeUIDs() {
-        return Collections.singleton(EgloConnectBindingConstants.THING_TYPE_AWOX_BULB);
+        return Collections.singleton(EgloConnectBindingConstants.THING_TYPE_BULB);
     }
 
     @Override
     public @Nullable ThingUID getThingUID(BluetoothDiscoveryDevice device) {
+        //TODO bulb und remote unterscheiden
         if (device.getConnectionState() == BluetoothDevice.ConnectionState.CONNECTED && isAwoxDevice(device)) {
-            return new ThingUID(EgloConnectBindingConstants.THING_TYPE_AWOX_BULB, device.getAdapter().getUID(),
+            return new ThingUID(EgloConnectBindingConstants.THING_TYPE_BULB, device.getAdapter().getUID(),
                     device.getAddress().toString().toLowerCase().replace(":", ""));
         }
         return null;

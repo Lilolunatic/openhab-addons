@@ -1,49 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <thing:thing-descriptions bindingId="bluetooth"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
-	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+                          xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
-	<!-- Sample Thing Type -->
-	<thing-type id="egloconnect">
-		<supported-bridge-type-refs>
-			<bridge-type-ref id="roaming"/>
-			<bridge-type-ref id="bluegiga"/>
-			<bridge-type-ref id="bluez"/>
-		</supported-bridge-type-refs>
-		<label>New EgloConnect Binding Thing</label>
-		<description>New thing for EgloConnect Binding</description>
+    <thing-type id="awox_bulb">
+        <supported-bridge-type-refs>
+            <bridge-type-ref id="roaming"/>
+            <bridge-type-ref id="bluegiga"/>
+            <bridge-type-ref id="bluez"/>
+        </supported-bridge-type-refs>
+        <label>EgloConnect Bulb</label>
+        <description>Thing for EgloConnect Binding</description>
 
-		<channels>
-			<channel id="power" typeId="system.power"/>
-			<channel id="white_temperature" typeId="system.color-temperature"/>
-			<channel id="white_brightness" typeId="system.brightness"/>
-			<channel id="color" typeId="system.color"/>
-			<channel id="color_brightness" typeId="system.brightness"/>
-		</channels>
+        <channels>
+            <channel id="power" typeId="system.power"/>
+            <channel id="color" typeId="system.color"/>
+            <channel id="white_temperature" typeId="system.color-temperature"/>
+            <channel id="white_brightness" typeId="system.brightness"/>
+            <channel id="color_brightness" typeId="system.brightness"/>
+        </channels>
 
-		<config-description>
-			<parameter name="address" type="text">
-				<label>Address</label>
-				<description>Bluetooth address in XX:XX:XX:XX:XX:XX format</description>
-			</parameter>
-			<parameter name="meshName" type="text">
-				<label>Mesh Name</label>
-				<description>max 16 chars</description>
-			</parameter>
-			<parameter name="meshPassword" type="text">
-				<label>Mesh Password</label>
-				<description>max 16 chars</description>
-			</parameter>
-			<parameter name="refreshInterval" type="integer" min="10">
-				<label>Refresh Interval</label>
-				<description>States how often a refresh shall occur in seconds. This could have impact to battery
-					lifetime
-				</description>
-				<default>300</default>
-			</parameter>
-		</config-description>
+        <config-description>
+            <parameter name="address" type="text">
+                <label>Address</label>
+                <description>Bluetooth address in XX:XX:XX:XX:XX:XX format</description>
+            </parameter>
+            <parameter name="meshName" type="text">
+                <label>Mesh Name</label>
+                <description>max 16 chars</description>
+            </parameter>
+            <parameter name="meshPassword" type="text">
+                <label>Mesh Password</label>
+                <description>max 16 chars</description>
+            </parameter>
+        </config-description>
 
-	</thing-type>
-
+    </thing-type>
 </thing:thing-descriptions>

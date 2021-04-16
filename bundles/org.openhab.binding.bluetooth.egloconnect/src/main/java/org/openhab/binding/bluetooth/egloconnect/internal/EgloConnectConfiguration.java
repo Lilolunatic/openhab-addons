@@ -23,8 +23,9 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 public class EgloConnectConfiguration {
 
     public String address = "";
-    public String meshName = "unpaired";
-    public String meshPassword = "1234";
+    public String meshName = "";
+    public String meshPassword = "";
+
 
     public int refreshInterval;
 
