@@ -11,8 +11,8 @@
 			<bridge-type-ref id="bluegiga"/>
 			<bridge-type-ref id="bluez"/>
 		</supported-bridge-type-refs>
-		<label>EgloConnect Binding Thing</label>
-		<description>Sample thing for EgloConnect Binding</description>
+		<label>New EgloConnect Binding Thing</label>
+		<description>New thing for EgloConnect Binding</description>
 
 		<channels>
 			<channel id="power" typeId="system.power"/>

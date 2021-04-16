@@ -84,6 +84,7 @@ public class EgloConnectHandler extends ConnectedBluetoothHandler implements Res
                         switch ((OnOffType) command) {
                             case ON:
                                 this.turnOn();
+                                logger.info("turn on");
                                 break;
                             case OFF:
                                 this.turnOff();
